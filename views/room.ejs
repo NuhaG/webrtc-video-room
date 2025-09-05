@@ -3,27 +3,112 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- gets room id from the server -->
     <script>
       const ROOM_ID = "<%= roomId %>";
     </script>
-    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js" defer></script>
+    <!-- peerjs handles WebRTC peer-to-peer video calls  -->
+    <script
+      src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"
+      defer
+    ></script>
+    <!-- connects server for signals -->
     <script src="/socket.io/socket.io.js" defer></script>
     <script src="/script.js" defer></script>
     <title>Room</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <style>
-      #video-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, 300px);
-        grid-auto-rows: 300px;
+      body {
+        margin: 0;
+        background: #121212;
+        font-family: Arial, sans-serif;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
       }
-      video {
+
+      #video-grid {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-auto-rows: 300px;
+        gap: 10px;
+        padding: 10px;
+      }
+
+      #video-grid video {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        border-radius: 10px;
+        background: black;
+      }
+
+      #controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px;
+        background: #1e1e1e;
+        border-top: 2px solid #2a2a2a;
+        gap: 20px;
+      }
+
+      #roomCode {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 16px;
+        color: #ffffff;
+      }
+
+      .control-btn {
+        background: #2a2a2a;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 12px 18px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .control-btn:hover {
+        background: #444;
+      }
+
+      .control-btn.leave {
+        background: #ff3b3b;
+      }
+
+      .control-btn.leave:hover {
+        background: #cc2c2c;
       }
     </style>
   </head>
   <body>
     <div id="video-grid"></div>
+    <div id="controls">
+      <h1 id="roomCode"></h1>
+      <button id="muteButton" class="control-btn">
+        <i id="muteIcon" class="fas fa-microphone"></i>
+      </button>
+      <button id="videoButton" class="control-btn">
+        <i id="videoIcon" class="fas fa-video"></i>
+      </button>
+      <button id="leaveButton" class="control-btn leave">
+        <i class="fas fa-phone-slash"></i>
+      </button>
+    </div>
   </body>
 </html>

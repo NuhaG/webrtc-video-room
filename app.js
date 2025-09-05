@@ -1,35 +1,42 @@
-const express = require("express");
-const app = express();
-const server = require("http").Server(app);
-const io = require("socket.io")(server);
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { v4 as uuidV4 } from "uuid";
 
-const { v4: uuidv4 } = require("uuid");
+const app = express();
+const server = createServer(app);
+const io = new Server(server);
 
 app.set("view engine", "ejs");
-
 app.use(express.static("public"));
 
+// Home route → generates new room if requested
 app.get("/", (req, res) => {
-  res.redirect(`/${uuidv4()}`);
+  res.render("home");
 });
 
-app.get("/:room", (req, res) => {
+app.get("/room", (req, res) => {
+  const roomId = uuidV4(); // generate random room code
+  res.redirect(`/room/${roomId}`);
+});
+
+app.get("/room/:room", (req, res) => {
   res.render("room", { roomId: req.params.room });
 });
 
-io.on("connection", (socket) => {
-  console.log("New socket connected:", socket.id);
-
+// Socket.IO handling
+io.on("connection", socket => {
   socket.on("join-room", (roomId, userId) => {
     socket.join(roomId);
     socket.to(roomId).emit("user-connected", userId);
 
-    socket.on('disconnect', ()=>{
-        socket.to(roomId).emit('user-disconnected', userId);
-    })
+    socket.on("disconnect", () => {
+      socket.to(roomId).emit("user-disconnected", userId);
+    });
   });
 });
 
-
 const port = process.env.PORT || 3000;
-server.listen(port, console.log(`Server is Listening on port ${port}`));
+server.listen(port, () => {
+  console.log(`Server running on port ${port}...`);
+});

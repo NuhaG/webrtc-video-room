@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Video App Home</title>
+  </head>
+  <style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #1f1f1f, rgb(62, 58, 58));
+        font-family: Arial, sans-serif;
+        color: #fff;
+    }
+    .container {
+        background-color: #1f1f1f;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 1px 1px 14px aquamarine;
+    }
+    .container h1 {
+        margin-bottom: 10px;
+        color: aquamarine;
+    }
+    .container p {
+        margin: 20px;
+        font-weight: normal;
+        color: #ccc;
+    }
+    form {
+        margin: 10px;
+    }
+    input {
+        width: 100%;
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        outline: none;
+        box-sizing: border-box;
+    }
+    button {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 12px;
+        background-color: aquamarine;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: 0.3s ease-in-out;
+    }
+    button:hover {
+        background-color: rgb(127, 255, 212, 0.5);
+        color: white;
+    }
+  </style>
+  <body>
+    <div class="container">
+      <h1>Welcome to Video App</h1>
+      <p>Collaboration made simple for study groups</p>
+      <form action="/room">
+        <button type="submit">Join New Room</button>
+      </form>
+      <p>Or Join Using Room Code</p>
+      <form id="joinForm">
+        <input type="text" id="roomInput" placeholder="Enter Room Code" required/> 
+        <button type="submit" class="join-btn">Join</button>
+      </form>      
+    </div>
+
+    <script>
+      document.getElementById("joinForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const roomCode = document.getElementById("roomInput").value.trim();
+        if (roomCode) {
+          window.location.href = `/room/${roomCode}`;
+        }
+      });
+    </script>
+  </body>
+</html>
