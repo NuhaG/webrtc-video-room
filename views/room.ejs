@@ -64,10 +64,22 @@
         left: 50%;
         transform: translateX(-50%);
         background: #333;
-        padding: 8px 16px;
-        border-radius: 6px;
+        opacity: 90%;
+        padding: 6px 14px;
+        text-align: center;
+        border-bottom: 2px solid #2a2a2a;
+        border-radius: 5px;
         font-size: 16px;
         color: #ffffff;
+      }
+
+      #roomCodeNo {
+        font-size: 16px;
+      }
+
+      #copyStatus {
+        color:#706f6f;
+        font-size: 15px;
       }
 
       .control-btn {
@@ -93,13 +105,17 @@
 
       .control-btn.leave:hover {
         background: #cc2c2c;
-      }
+      } 
     </style>
   </head>
   <body>
     <div id="video-grid"></div>
     <div id="controls">
-      <h1 id="roomCode"></h1>
+      <div id="roomCode">
+        <h1 id="roomCodeNo"></h1>
+        <h3 id="copyStatus"></h3>
+      </div>
+
       <button id="muteButton" class="control-btn">
         <i id="muteIcon" class="fas fa-microphone"></i>
       </button>

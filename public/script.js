@@ -70,7 +70,21 @@ function addVideoStream(video, stream) {
 }
 
 // Add Room code on top
-document.getElementById("roomCode").innerHTML = `Room Code: ${ROOM_ID}`;
+document.getElementById("roomCodeNo").innerHTML = `Room Code: ${ROOM_ID}`;
+
+// Copy room link on click
+document.getElementById("roomCode").addEventListener("click", () => {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const status = document.getElementById("copyStatus");
+    status.innerText = "Link Copied!";
+    setTimeout(() => {
+      status.innerText = "";
+    }, 3000);
+  }).catch(() => {
+    alert("Failed to copy link");
+  });
+});
+
 
 // Button Controls
 // Mute/Unmute
