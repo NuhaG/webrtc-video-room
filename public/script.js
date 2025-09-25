@@ -49,7 +49,7 @@ function connectToNewUser(userId, stream) {
   const call = peer.call(userId, stream);
   const video = document.createElement("video");
 
-  call.on("stream", userVideoStream => {
+  call.on("stream", (userVideoStream) => {
     addVideoStream(video, userVideoStream);
   });
 
@@ -95,4 +95,11 @@ document.getElementById("videoButton").addEventListener("click", () => {
     myStream.getVideoTracks()[0].enabled = true;
     document.getElementById("videoIcon").className = "fas fa-video";
   }
+});
+
+// End Call
+document.getElementById("leaveButton").addEventListener("click", () => {
+  myStream.getVideoTracks()[0].enabled = false;
+  myStream.getAudioTracks()[0].enabled = false;
+  window.location.href = "/";
 });
