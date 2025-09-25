@@ -1,21 +1,23 @@
-# WebRTC Video Room App
+# 💻 WebRTC Video Room App
 
 A simple video collaboration app for study groups, built with Express, Socket.IO, PeerJS, and WebRTC.  
 A hands-on project to explore peer-to-peer video calling, showcasing real-time video calls and offering room for future features and improvements.
 
 ---
 
-## Features
+## ✨ Features
 
 - Create or join video rooms with a unique code
 - Peer-to-peer video calls using WebRTC
 - Real-time signaling with Socket.IO
 - Mute/unmute microphone and toggle video
+- Raise hand
+- Copy room codes for easy sharing
 - Responsive UI with EJS templates
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 
@@ -24,14 +26,17 @@ A hands-on project to explore peer-to-peer video calling, showcasing real-time v
 
 ### Installation
 
+#### 1. Clone
 ```bash
 git clone https://github.com/NuhaG/webrtc-video-room.git
 ```
 
+#### 2. Navigate to folder
 ```bash
 cd webrtc-video-room
 ```
 
+#### 3. Install dependencies
 ```bash
 npm install
 ```
@@ -58,7 +63,7 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
 
 ---
 
-## Usage
+## 👥 Usage
 
 - **Create a New Room:**  
   Click "Join New Room" on the home page.
@@ -73,10 +78,11 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
   - Mute/unmute microphone
   - Toggle video
   - Leave room
+  - Raise Hand
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 ├── app.js
@@ -92,7 +98,7 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
 
 ---
 
-## Dependencies
+## 📦 Dependencies
 
 - express
 - socket.io
@@ -102,19 +108,20 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
 
 ---
 
-## Future Improvements
+## 🔮 Future Improvements
 
 - Add text chat functionality
 - Implement screen sharing
 - Enable recording
 - Authentication for private rooms
 - Explore scalable WebRTC solutions using SFU/MCU servers
+- Improve notifications
 
 ---
 
-## Contributions
+## 🤝 Contributions
 
 Contributions are welcome!  
-You can report issues, suggest features, or submit pull requests to improve the project.
+You can report issues, suggest new features, or submit pull requests to improve the project.
 
 ---
