@@ -12,6 +12,9 @@ const myVideo = document.createElement("video");
 myVideo.muted = true; // mutes self (speaker)
 let myStream;
 
+// username prompt
+const userName = prompt("Enter your name:") || "Anonymous";
+
 // Get local stream
 navigator.mediaDevices
   .getUserMedia({ video: true, audio: true })
@@ -74,17 +77,19 @@ document.getElementById("roomCodeNo").innerHTML = `Room Code: ${ROOM_ID}`;
 
 // Copy room link on click
 document.getElementById("roomCode").addEventListener("click", () => {
-  navigator.clipboard.writeText(window.location.href).then(() => {
-    const status = document.getElementById("copyStatus");
-    status.innerText = "Link Copied!";
-    setTimeout(() => {
-      status.innerText = "";
-    }, 3000);
-  }).catch(() => {
-    alert("Failed to copy link");
-  });
+  navigator.clipboard
+    .writeText(window.location.href)
+    .then(() => {
+      const status = document.getElementById("copyStatus");
+      status.innerText = "Link Copied!";
+      setTimeout(() => {
+        status.innerText = "";
+      }, 3000);
+    })
+    .catch(() => {
+      alert("Failed to copy link");
+    });
 });
-
 
 // Button Controls
 // Mute/Unmute
@@ -113,7 +118,34 @@ document.getElementById("videoButton").addEventListener("click", () => {
 
 // End Call
 document.getElementById("leaveButton").addEventListener("click", () => {
-  myStream.getVideoTracks()[0].enabled = false;
-  myStream.getAudioTracks()[0].enabled = false;
+  for (let userId in peers) {
+    peers[userId].close();
+  }
+  myStream.getTracks().forEach(track => track.stop());
+  myVideo.remove();
+
   window.location.href = "/";
+});
+
+
+// Raise Hand
+const handBtn = document.getElementById("hand");
+let handRaised = false;
+
+// Send hand raise signal
+handBtn.addEventListener("click", () => {
+  handRaised = !handRaised;
+
+  if (handRaised) {
+    handBtn.style.background = "#d3ba2bff";
+    socket.emit("handRaised", ROOM_ID, userName);
+  } else {
+    handBtn.style.background = "#2a2a2a";
+    socket.emit("handLowered", ROOM_ID, userName);
+  }
+});
+
+// Other users raising their hand
+socket.on("userHandRaised", (name) => {
+  alert(`${name} has raised their hand!`);
 });

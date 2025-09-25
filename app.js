@@ -25,11 +25,17 @@ app.get("/room/:room", (req, res) => {
 });
 
 // Socket.IO handling
-io.on("connection", socket => {
+io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userId) => {
     socket.join(roomId);
     socket.to(roomId).emit("user-connected", userId);
 
+    // Hand Raise
+    socket.on("handRaised", (roomId, userName) => {
+      socket.to(roomId).emit("userHandRaised", userName);
+    });
+
+    // Disconnect
     socket.on("disconnect", () => {
       socket.to(roomId).emit("user-disconnected", userId);
     });
