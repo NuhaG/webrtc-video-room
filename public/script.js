@@ -35,6 +35,10 @@ navigator.mediaDevices
     socket.on("user-connected", (userId) => {
       connectToNewUser(userId, stream);
     });
+  })
+  .catch((err) => {
+    console.log("Media Request Error:", err);
+    alert("Could not access media, allow to continue.");
   });
 
 // When a user disconnects
@@ -118,15 +122,19 @@ document.getElementById("videoButton").addEventListener("click", () => {
 
 // End Call
 document.getElementById("leaveButton").addEventListener("click", () => {
-  for (let userId in peers) {
-    peers[userId].close();
+  try {
+    for (let userId in peers) peers[userId].close();
+    if (myStream) myStream.getTracks().forEach((t) => t.stop());
+
+    socket.disconnect();
+    if (peer && typeof peer.destroy === "function") peer.destroy();
+    myVideo.remove();
+  } catch (err) {
+    console.error(err);
+  } finally {
+    window.location.href = "/";
   }
-  myStream.getTracks().forEach(track => track.stop());
-  myVideo.remove();
-
-  window.location.href = "/";
 });
-
 
 // Raise Hand
 const handBtn = document.getElementById("hand");
