@@ -12,28 +12,44 @@ const myVideo = document.createElement("video");
 myVideo.muted = true; // mutes self (speaker)
 let myStream;
 
-// username prompt
+// IMPORTANT FIX: sync readiness
+let myPeerId = null;
+let streamReady = false;
+let peerReady = false;
+
 const userName = prompt("Enter your name:") || "Anonymous";
 
-// Get local stream
+/*
+  ===========================
+  JOIN ONLY WHEN BOTH READY
+  ===========================
+*/
+function joinRoom() {
+  if (myPeerId && streamReady) {
+    socket.emit("join-room", ROOM_ID, myPeerId);
+  }
+}
+
+// Get local stream FIRST
 navigator.mediaDevices
   .getUserMedia({ video: true, audio: true })
   .then((stream) => {
     myStream = stream;
+    streamReady = true;
+
     addVideoStream(myVideo, stream);
+
+    joinRoom(); // attempt join
 
     // Answer incoming calls
     peer.on("call", (call) => {
       call.answer(stream);
+
       const video = document.createElement("video");
+
       call.on("stream", (userVideoStream) => {
         addVideoStream(video, userVideoStream);
       });
-    });
-
-    // When a new user connects
-    socket.on("user-connected", (userId) => {
-      connectToNewUser(userId, stream);
     });
   })
   .catch((err) => {
@@ -41,18 +57,34 @@ navigator.mediaDevices
     alert("Could not access media, allow to continue.");
   });
 
-// When a user disconnects
-socket.on("user-disconnected", (userId) => {
-  if (peers[userId]) peers[userId].close();
+// Existing users (ONLY SOURCE OF CONNECTIONS)
+socket.on("existing-users", (users) => {
+  users.forEach((userId) => {
+    if (userId === myPeerId) return;
+    connectToNewUser(userId, myStream);
+  });
 });
 
-// When PeerJS is ready, join the room
+// When a user disconnects
+socket.on("user-disconnected", (userId) => {
+  if (peers[userId]) {
+    peers[userId].close();
+    delete peers[userId];
+  }
+});
+
+// Peer ready
 peer.on("open", (id) => {
-  socket.emit("join-room", ROOM_ID, id);
+  myPeerId = id;
+  peerReady = true;
+  joinRoom();
 });
 
 // Call a new user
 function connectToNewUser(userId, stream) {
+  if (!userId || userId === myPeerId) return;
+  if (peers[userId]) return;
+
   const call = peer.call(userId, stream);
   const video = document.createElement("video");
 
@@ -62,12 +94,13 @@ function connectToNewUser(userId, stream) {
 
   call.on("close", () => {
     video.remove();
+    delete peers[userId];
   });
 
   peers[userId] = call;
 }
 
-// Append video to the grid
+// Append video to grid
 function addVideoStream(video, stream) {
   video.srcObject = stream;
   video.addEventListener("loadedmetadata", () => {
@@ -76,71 +109,47 @@ function addVideoStream(video, stream) {
   videoGrid.append(video);
 }
 
-// Add Room code on top
+// Room UI
 document.getElementById("roomCodeNo").innerHTML = `Room Code: ${ROOM_ID}`;
 
-// Copy room link on click
 document.getElementById("roomCode").addEventListener("click", () => {
-  navigator.clipboard
-    .writeText(window.location.href)
-    .then(() => {
-      const status = document.getElementById("copyStatus");
-      status.innerText = "Link Copied!";
-      setTimeout(() => {
-        status.innerText = "";
-      }, 3000);
-    })
-    .catch(() => {
-      alert("Failed to copy link");
-    });
+  navigator.clipboard.writeText(window.location.href);
 });
 
-// Button Controls
-// Mute/Unmute
+// Mute
 document.getElementById("muteButton").addEventListener("click", () => {
   const enabled = myStream.getAudioTracks()[0].enabled;
-  if (enabled) {
-    myStream.getAudioTracks()[0].enabled = false;
-    document.getElementById("muteIcon").className = "fas fa-microphone-slash";
-  } else {
-    myStream.getAudioTracks()[0].enabled = true;
-    document.getElementById("muteIcon").className = "fas fa-microphone";
-  }
+  myStream.getAudioTracks()[0].enabled = !enabled;
+  document.getElementById("muteIcon").className = enabled
+    ? "fas fa-microphone-slash"
+    : "fas fa-microphone";
 });
 
-// Video On/Off
+// Video toggle
 document.getElementById("videoButton").addEventListener("click", () => {
   const enabled = myStream.getVideoTracks()[0].enabled;
-  if (enabled) {
-    myStream.getVideoTracks()[0].enabled = false;
-    document.getElementById("videoIcon").className = "fas fa-video-slash";
-  } else {
-    myStream.getVideoTracks()[0].enabled = true;
-    document.getElementById("videoIcon").className = "fas fa-video";
-  }
+  myStream.getVideoTracks()[0].enabled = !enabled;
+  document.getElementById("videoIcon").className = enabled
+    ? "fas fa-video-slash"
+    : "fas fa-video";
 });
 
-// End Call
+// Leave
 document.getElementById("leaveButton").addEventListener("click", () => {
   try {
-    for (let userId in peers) peers[userId].close();
-    if (myStream) myStream.getTracks().forEach((t) => t.stop());
-
+    Object.values(peers).forEach((p) => p.close());
+    myStream.getTracks().forEach((t) => t.stop());
     socket.disconnect();
-    if (peer && typeof peer.destroy === "function") peer.destroy();
-    myVideo.remove();
-  } catch (err) {
-    console.error(err);
+    peer.destroy();
   } finally {
     window.location.href = "/";
   }
 });
 
-// Raise Hand
+// Hand raise
 const handBtn = document.getElementById("hand");
 let handRaised = false;
 
-// Send hand raise signal
 handBtn.addEventListener("click", () => {
   handRaised = !handRaised;
 
@@ -153,7 +162,6 @@ handBtn.addEventListener("click", () => {
   }
 });
 
-// Other users raising their hand
 socket.on("userHandRaised", (name) => {
   alert(`${name} has raised their hand!`);
 });
