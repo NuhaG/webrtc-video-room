@@ -3,8 +3,9 @@ const videoGrid = document.getElementById("video-grid");
 
 // peerjs in connected to WebRTC, server on port 3001
 const peer = new Peer(undefined, {
-  host: "/",
-  port: 3001,
+  host: "0.peerjs.com",
+  port: 443,
+  secure: true,
 });
 
 const peers = {};
@@ -19,11 +20,7 @@ let peerReady = false;
 
 const userName = prompt("Enter your name:") || "Anonymous";
 
-/*
-  ===========================
-  JOIN ONLY WHEN BOTH READY
-  ===========================
-*/
+// join when both ready
 function joinRoom() {
   if (myPeerId && streamReady) {
     socket.emit("join-room", ROOM_ID, myPeerId);
@@ -57,7 +54,7 @@ navigator.mediaDevices
     alert("Could not access media, allow to continue.");
   });
 
-// Existing users (ONLY SOURCE OF CONNECTIONS)
+// Existing users
 socket.on("existing-users", (users) => {
   users.forEach((userId) => {
     if (userId === myPeerId) return;
