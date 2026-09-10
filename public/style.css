@@ -1,0 +1,301 @@
+body {
+  margin: 0;
+  background: #121212;
+  font-family: Arial, sans-serif;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#video-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-auto-rows: 300px;
+  gap: 10px;
+  padding: 10px;
+}
+
+.video-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-box video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  background: black;
+}
+
+/* Name on the black screen in case camera is off */
+.black-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #111111;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+}
+
+.black-screen.hidden {
+  display: none;
+}
+
+.black-screen-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: aquamarine;
+  margin-bottom: 10px;
+}
+
+.black-screen-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.black-screen-status {
+  font-size: 12px;
+  color: #888888;
+  margin-top: 4px;
+}
+
+/* Name label on video */
+.video-name {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Mic indicator on video tile */
+.mic-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  color: aquamarine;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  z-index: 3;
+}
+
+.mic-indicator.muted {
+  color: #ff4747;
+}
+
+#controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  background: #1e1e1e;
+  border-top: 2px solid #2a2a2a;
+  gap: 20px;
+}
+
+#roomCode {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  opacity: 90%;
+  padding: 6px 14px;
+  text-align: center;
+  border-bottom: 2px solid #2a2a2a;
+  border-radius: 5px;
+  font-size: 16px;
+  color: #ffffff;
+  z-index: 100;
+  cursor: pointer;
+}
+
+#roomCodeNo {
+  font-size: 16px;
+  margin: 0;
+}
+
+#copyStatus {
+  color: #706f6f;
+  font-size: 15px;
+  margin: 0;
+}
+
+.control-btn {
+  background: #2a2a2a;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 12px 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn:hover {
+  background: #444;
+}
+
+.control-btn.leave {
+  background: #ff3b3b;
+}
+
+.control-btn.leave:hover {
+  background: #cc2c2c;
+}
+
+#queueBtn {
+  position: relative;
+}
+
+#queueBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: aquamarine;
+  color: #111;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Queue Sidebar (Slides in from the right) */
+.queue-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(26, 26, 26, 0.96);
+  backdrop-filter: blur(8px);
+  border-left: 1px solid #333333;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.7);
+  transition: transform 0.25s ease-in-out;
+  transform: translateX(0);
+}
+
+.queue-sidebar.hidden {
+  transform: translateX(100%);
+  pointer-events: none;
+}
+
+.queue-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #222222;
+  border-bottom: 1px solid #333;
+}
+
+.queue-sidebar-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: aquamarine;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.close-sidebar-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-sidebar-btn:hover {
+  color: #fff;
+}
+
+.queue-sidebar-body {
+  flex: 1;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.queue-item {
+  background: #242424;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #eee;
+}
+
+.queue-item:last-child {
+  margin-bottom: 0;
+}
+
+.queue-number {
+  background: aquamarine;
+  color: #111;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.queue-empty {
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+  padding: 20px 0;
+  font-style: italic;
+}
+
