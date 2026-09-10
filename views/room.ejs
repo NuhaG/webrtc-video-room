@@ -36,6 +36,29 @@
       </div>
     </div>
 
+    <!-- Live Chat Sidebar -->
+    <div id="chatSidebar" class="chat-sidebar hidden">
+      <div class="chat-sidebar-header">
+        <h3><i class="fas fa-comments"></i> In-Call Messages</h3>
+        <button id="closeChatSidebar" class="close-sidebar-btn">&times;</button>
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-empty">No messages yet. Say hello!</div>
+      </div>
+      <form id="chatForm" class="chat-input-form">
+        <input
+          type="text"
+          id="chatInput"
+          placeholder="Send a message..."
+          autocomplete="off"
+          required
+        />
+        <button type="submit" class="chat-send-btn" title="Send">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+
     <div id="controls">
       <div id="roomCode">
         <h1 id="roomCodeNo"></h1>
@@ -57,6 +80,10 @@
       <button id="queueBtn" class="control-btn" title="Raised Hands Queue">
         <i class="fas fa-users"></i>
         <span id="queueBadge">0</span>
+      </button>
+      <button id="chatBtn" class="control-btn" title="Live Chat">
+        <i class="fas fa-comment-dots"></i>
+        <span id="chatBadge" class="chat-badge hidden">0</span>
       </button>
     </div>
   </body>

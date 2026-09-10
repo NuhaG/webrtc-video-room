@@ -1,28 +1,27 @@
-const socket = io("/"); // connects to your server, used to signal others on join or leave
+const socket = io("/");
 const videoGrid = document.getElementById("video-grid");
 const queueList = document.getElementById("queueList");
 const queueCount = document.getElementById("queueCount");
 
-// peerjs connected to WebRTC, server on port 3001
+// Initialize PeerJS for WebRTC calls
 const peer = new Peer(undefined, {
   host: "0.peerjs.com",
   port: 443,
   secure: true,
 });
 
-const peers = {};
-const userStates = {}; // userId -> { name, isVideoOn, isAudioOn }
-let raisedHands = []; // array of { name, userId }
+const peers = {}; // userId -> Peer call
+const userStates = {}; // userId -> { name, isVideoOn, isAudioOn, isHandRaised }
+let raisedHands = []; // List of { name, userId }
 const myVideo = document.createElement("video");
-myVideo.muted = true; // mutes self (speaker)
+myVideo.muted = true; // Mute self to prevent echo
 let myStream;
 
-// Sync readiness
 let myPeerId = null;
 let streamReady = false;
 let peerReady = false;
 
-// Resolve Name: check URL param -> ask via prompt when joining via invite link
+// Get name from query or prompt
 const urlParams = new URLSearchParams(window.location.search);
 let initialName = urlParams.get("name");
 if (!initialName || !initialName.trim()) {
@@ -30,25 +29,33 @@ if (!initialName || !initialName.trim()) {
 }
 const userName = initialName.trim() || "Anonymous";
 
-// join when both ready
+// Emit join-room once both media stream and peer ID are ready
 function joinRoom() {
   if (myPeerId && streamReady) {
-    const isVideoOn = myStream && myStream.getVideoTracks().length > 0 ? myStream.getVideoTracks()[0].enabled : true;
-    const isAudioOn = myStream && myStream.getAudioTracks().length > 0 ? myStream.getAudioTracks()[0].enabled : true;
+    const isVideoOn =
+      myStream && myStream.getVideoTracks().length > 0
+        ? myStream.getVideoTracks()[0].enabled
+        : true;
+    const isAudioOn =
+      myStream && myStream.getAudioTracks().length > 0
+        ? myStream.getAudioTracks()[0].enabled
+        : true;
     socket.emit("join-room", ROOM_ID, myPeerId, userName, isVideoOn, isAudioOn);
   }
 }
 
-// Get local stream FIRST
+// Get user camera and mic
 navigator.mediaDevices
   .getUserMedia({ video: true, audio: true })
   .then((stream) => {
     myStream = stream;
     streamReady = true;
 
+    // Add local video to grid
     addVideoStream(myVideo, stream, `${userName} (You)`, true, "self");
 
-    joinRoom(); // attempt join
+    // Join room
+    joinRoom();
 
     // Answer incoming calls
     peer.on("call", (call) => {
@@ -64,38 +71,59 @@ navigator.mediaDevices
     });
   })
   .catch((err) => {
-    console.log("Media Request Error:", err);
-    alert("Could not access media, allow to continue.");
+    console.log("Media Error:", err);
+    alert("Could not access camera/mic, please allow permissions.");
   });
 
-// Existing users
+// PeerJS connected
+peer.on("open", (id) => {
+  myPeerId = id;
+  peerReady = true;
+  joinRoom();
+});
+
+// Existing users already in room
 socket.on("existing-users", (users) => {
-  // users is { [userId]: { name, isVideoOn, isAudioOn, isHandRaised } }
   Object.keys(users).forEach((userId) => {
     if (userId === myPeerId) return;
+
     const u = users[userId];
     const uName = typeof u === "object" ? u.name : u;
     const uVideo = typeof u === "object" ? u.isVideoOn : true;
     const uAudio = typeof u === "object" ? u.isAudioOn : true;
     const uHand = typeof u === "object" ? Boolean(u.isHandRaised) : false;
-    userStates[userId] = { name: uName, isVideoOn: uVideo, isAudioOn: uAudio, isHandRaised: uHand };
+
+    userStates[userId] = {
+      name: uName,
+      isVideoOn: uVideo,
+      isAudioOn: uAudio,
+      isHandRaised: uHand,
+    };
 
     if (uHand && !raisedHands.some((h) => h.userId === userId)) {
       raisedHands.push({ name: uName, userId });
     }
 
+    // Call existing user
     connectToNewUser(userId, myStream, uName);
   });
+
   updateQueueUI();
 });
 
-// New user connected
+// New user joined
 socket.on("user-connected", (userId, uData) => {
   const uName = typeof uData === "object" ? uData.name : uData;
   const uVideo = typeof uData === "object" ? uData.isVideoOn : true;
   const uAudio = typeof uData === "object" ? uData.isAudioOn : true;
   const uHand = typeof uData === "object" ? Boolean(uData.isHandRaised) : false;
-  userStates[userId] = { name: uName, isVideoOn: uVideo, isAudioOn: uAudio, isHandRaised: uHand };
+
+  userStates[userId] = {
+    name: uName,
+    isVideoOn: uVideo,
+    isAudioOn: uAudio,
+    isHandRaised: uHand,
+  };
 
   if (uHand && !raisedHands.some((h) => h.userId === userId)) {
     raisedHands.push({ name: uName, userId });
@@ -103,22 +131,22 @@ socket.on("user-connected", (userId, uData) => {
   }
 });
 
-// When a user disconnects
+// User disconnected
 socket.on("user-disconnected", (userId) => {
   if (peers[userId]) {
     peers[userId].close();
     delete peers[userId];
   }
   delete userStates[userId];
+
   const videoBox = document.getElementById(`box-${userId}`);
   if (videoBox) videoBox.remove();
 
-  // Remove from raised hands queue
   raisedHands = raisedHands.filter((h) => h.userId !== userId);
   updateQueueUI();
 });
 
-// Video track toggle from remote user
+// Remote camera toggle
 socket.on("user-toggle-video", (userId, isVideoOn) => {
   if (userStates[userId]) {
     userStates[userId].isVideoOn = isVideoOn;
@@ -133,7 +161,7 @@ socket.on("user-toggle-video", (userId, isVideoOn) => {
   }
 });
 
-// Audio track toggle from remote user
+// Remote mic toggle
 socket.on("user-toggle-audio", (userId, isAudioOn) => {
   if (userStates[userId]) {
     userStates[userId].isAudioOn = isAudioOn;
@@ -150,7 +178,7 @@ socket.on("user-toggle-audio", (userId, isAudioOn) => {
   }
 });
 
-// Hand raise queue events
+// Hand raise events
 socket.on("userHandRaised", (name, userId) => {
   if (!raisedHands.some((h) => h.userId === userId || (userId && h.name === name))) {
     raisedHands.push({ name, userId });
@@ -163,6 +191,7 @@ socket.on("userHandLowered", (name, userId) => {
   updateQueueUI();
 });
 
+// Update hand queue sidebar and badge
 function updateQueueUI() {
   const count = raisedHands.length;
   const badge = document.getElementById("queueBadge");
@@ -188,19 +217,12 @@ function updateQueueUI() {
   }
 }
 
-// Peer ready
-peer.on("open", (id) => {
-  myPeerId = id;
-  peerReady = true;
-  joinRoom();
-});
-
-// Call a new user
+// Call a new peer
 function connectToNewUser(userId, stream, remoteName) {
   if (!userId || userId === myPeerId) return;
   if (peers[userId]) return;
 
-  const name = remoteName || userNames[userId] || "Participant";
+  const name = remoteName || userStates[userId]?.name || "Participant";
   const call = peer.call(userId, stream);
   const video = document.createElement("video");
 
@@ -217,7 +239,7 @@ function connectToNewUser(userId, stream, remoteName) {
   peers[userId] = call;
 }
 
-// Append video to grid with person's name, black screen (when camera off), and mic indicator
+// Add video element to grid with name tag, camera off screen, and mic indicator
 function addVideoStream(video, stream, name, isSelf, userId) {
   const existingBox = document.getElementById(`box-${userId}`);
   if (existingBox) {
@@ -235,15 +257,18 @@ function addVideoStream(video, stream, name, isSelf, userId) {
     video.play();
   });
 
-  // Check if camera is currently on or off
+  // Check if camera is on
   let isVideoOn = true;
   if (isSelf) {
-    isVideoOn = stream && stream.getVideoTracks().length > 0 ? stream.getVideoTracks()[0].enabled : true;
+    isVideoOn =
+      stream && stream.getVideoTracks().length > 0
+        ? stream.getVideoTracks()[0].enabled
+        : true;
   } else if (userStates[userId] && userStates[userId].isVideoOn !== undefined) {
     isVideoOn = userStates[userId].isVideoOn;
   }
 
-  // Black screen with name when camera is off
+  // Black screen with initials when camera is off
   const initials = (name || "U").substring(0, 2).toUpperCase();
   const blackScreen = document.createElement("div");
   blackScreen.className = `black-screen ${isVideoOn ? "hidden" : ""}`;
@@ -254,20 +279,23 @@ function addVideoStream(video, stream, name, isSelf, userId) {
     <div class="black-screen-status"><i class="fas fa-video-slash"></i> Camera Off</div>
   `;
 
-  // Visible name label on video tile
+  // Name tag
   const nameTag = document.createElement("div");
   nameTag.className = "video-name";
   nameTag.innerHTML = `<i class="fas fa-user"></i> ${name}`;
 
-  // Check if mic is currently on or off
+  // Check if mic is on
   let isAudioOn = true;
   if (isSelf) {
-    isAudioOn = stream && stream.getAudioTracks().length > 0 ? stream.getAudioTracks()[0].enabled : true;
+    isAudioOn =
+      stream && stream.getAudioTracks().length > 0
+        ? stream.getAudioTracks()[0].enabled
+        : true;
   } else if (userStates[userId] && userStates[userId].isAudioOn !== undefined) {
     isAudioOn = userStates[userId].isAudioOn;
   }
 
-  // Mic indicator badge (top right of video tile)
+  // Mic indicator
   const micIndicator = document.createElement("div");
   micIndicator.className = `mic-indicator ${isAudioOn ? "" : "muted"}`;
   micIndicator.id = `mic-${userId}`;
@@ -280,7 +308,7 @@ function addVideoStream(video, stream, name, isSelf, userId) {
   videoGrid.append(box);
 }
 
-// Room UI - Copy URL (only copy till room ID)
+// Copy clean room URL
 document.getElementById("roomCodeNo").innerHTML = `Room Code: ${ROOM_ID}`;
 
 document.getElementById("roomCode").addEventListener("click", () => {
@@ -292,7 +320,7 @@ document.getElementById("roomCode").addEventListener("click", () => {
   }, 2000);
 });
 
-// Mute toggle
+// Toggle mic
 document.getElementById("muteButton").addEventListener("click", () => {
   if (!myStream) return;
   const audioTrack = myStream.getAudioTracks()[0];
@@ -305,7 +333,6 @@ document.getElementById("muteButton").addEventListener("click", () => {
     ? "fas fa-microphone"
     : "fas fa-microphone-slash";
 
-  // Update local tile mic indicator
   const selfMic = document.getElementById("mic-self");
   if (selfMic) {
     if (isAudioOn) {
@@ -317,11 +344,10 @@ document.getElementById("muteButton").addEventListener("click", () => {
     }
   }
 
-  // Broadcast to peers
   socket.emit("toggle-audio", isAudioOn);
 });
 
-// Video toggle
+// Toggle camera
 document.getElementById("videoButton").addEventListener("click", () => {
   if (!myStream) return;
   const videoTrack = myStream.getVideoTracks()[0];
@@ -334,7 +360,6 @@ document.getElementById("videoButton").addEventListener("click", () => {
     ? "fas fa-video"
     : "fas fa-video-slash";
 
-  // Toggle local black screen with name
   const selfBlackScreen = document.getElementById("black-screen-self");
   if (selfBlackScreen) {
     if (isVideoOn) {
@@ -344,11 +369,10 @@ document.getElementById("videoButton").addEventListener("click", () => {
     }
   }
 
-  // Broadcast to other users in room
   socket.emit("toggle-video", isVideoOn);
 });
 
-// Leave
+// Leave room
 document.getElementById("leaveButton").addEventListener("click", () => {
   try {
     Object.values(peers).forEach((p) => p.close());
@@ -360,7 +384,7 @@ document.getElementById("leaveButton").addEventListener("click", () => {
   }
 });
 
-// Hand raise
+// Raise / Lower hand
 const handBtn = document.getElementById("hand");
 let handRaised = false;
 
@@ -376,13 +400,16 @@ handBtn.addEventListener("click", () => {
   }
 });
 
-// Raised Hands Queue Sidebar
+// Toggle hand queue sidebar
 const queueBtn = document.getElementById("queueBtn");
 const queueSidebar = document.getElementById("queueSidebar");
 const closeQueueSidebar = document.getElementById("closeQueueSidebar");
 
 if (queueBtn && queueSidebar) {
   queueBtn.addEventListener("click", () => {
+    if (chatSidebar && !chatSidebar.classList.contains("hidden")) {
+      chatSidebar.classList.add("hidden");
+    }
     queueSidebar.classList.toggle("hidden");
   });
 }
@@ -393,4 +420,84 @@ if (closeQueueSidebar && queueSidebar) {
   });
 }
 
+// Chat sidebar & messaging
+const chatBtn = document.getElementById("chatBtn");
+const chatSidebar = document.getElementById("chatSidebar");
+const closeChatSidebar = document.getElementById("closeChatSidebar");
+const chatForm = document.getElementById("chatForm");
+const chatInput = document.getElementById("chatInput");
+const chatMessages = document.getElementById("chatMessages");
+const chatBadge = document.getElementById("chatBadge");
+let unreadChatCount = 0;
 
+if (chatBtn && chatSidebar) {
+  chatBtn.addEventListener("click", () => {
+    if (queueSidebar && !queueSidebar.classList.contains("hidden")) {
+      queueSidebar.classList.add("hidden");
+    }
+    const isHidden = chatSidebar.classList.toggle("hidden");
+    if (!isHidden) {
+      unreadChatCount = 0;
+      if (chatBadge) chatBadge.classList.add("hidden");
+      if (chatInput) chatInput.focus();
+    }
+  });
+}
+
+if (closeChatSidebar && chatSidebar) {
+  closeChatSidebar.addEventListener("click", () => {
+    chatSidebar.classList.add("hidden");
+  });
+}
+
+// Send chat message
+if (chatForm && chatInput) {
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const msg = chatInput.value.trim();
+    if (msg) {
+      socket.emit("send-message", msg);
+      chatInput.value = "";
+    }
+  });
+}
+
+// Receive chat message
+socket.on("receive-message", (data) => {
+  const { userId, userName: senderName, message, time } = data;
+  const isSelf = userId === myPeerId;
+
+  if (chatMessages) {
+    const emptyNotice = chatMessages.querySelector(".chat-empty");
+    if (emptyNotice) emptyNotice.remove();
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `chat-msg ${isSelf ? "self" : ""}`;
+    msgDiv.innerHTML = `
+      <div class="chat-msg-header">
+        <span class="chat-msg-sender">${isSelf ? "You" : senderName}</span>
+        <span class="chat-msg-time">${time || ""}</span>
+      </div>
+      <div class="chat-msg-text">${escapeHtml(message)}</div>
+    `;
+
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Show badge if chat sidebar is closed
+  if (!isSelf && chatSidebar && chatSidebar.classList.contains("hidden")) {
+    unreadChatCount++;
+    if (chatBadge) {
+      chatBadge.innerText = unreadChatCount;
+      chatBadge.classList.remove("hidden");
+    }
+  }
+});
+
+// Escape HTML for chat safety
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.innerText = text;
+  return div.innerHTML;
+}
