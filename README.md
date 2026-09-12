@@ -10,8 +10,10 @@ A hands-on project to explore peer-to-peer video calling, showcasing real-time v
 - Create or join video rooms with a unique code
 - Peer-to-peer video calls using WebRTC
 - Real-time signaling with Socket.IO
+- Real-time in-call text chat with unread message badges
 - Mute/unmute microphone and toggle video
-- Raise hand
+- Raise hand and raised hands queue sidebar
+- Participant status indicators (camera off avatars, mute status)
 - Copy room codes for easy sharing
 - Responsive UI with EJS templates
 
@@ -78,7 +80,9 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
   - Mute/unmute microphone
   - Toggle video
   - Leave room
-  - Raise Hand
+  - Raise hand
+  - View raised hands queue
+  - Live in-call text chat
 
 ---
 
@@ -87,7 +91,9 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
 ```
 ├── app.js
 ├── public/
-│   └── script.js
+│   ├── home.css
+│   ├── script.js
+│   └── style.css
 ├── views/
 │   ├── home.ejs
 │   └── room.ejs
@@ -110,7 +116,6 @@ Or use a public PeerJS server by updating the PeerJS config in `public/script.js
 
 ## 🔮 Future Improvements
 
-- Add text chat functionality
 - Implement screen sharing
 - Enable recording
 - Authentication for private rooms

@@ -1,33 +1,48 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
-    height: 100vh;
+    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
     align-items: center;
     background: linear-gradient(135deg, #1f1f1f, rgb(62, 58, 58));
     font-family: Arial, sans-serif;
     color: #fff;
+    padding: 16px;
 }
+
 .container {
     background-color: #1f1f1f;
     padding: 40px;
     border-radius: 12px;
     text-align: center;
     box-shadow: 1px 1px 14px aquamarine;
-    width: 320px;
+    width: 100%;
+    max-width: 360px;
 }
+
 .container h1 {
+    margin-top: 0;
     margin-bottom: 10px;
     color: aquamarine;
+    font-size: 24px;
 }
+
 .container p {
     margin: 16px 0 8px 0;
     font-weight: normal;
     color: #ccc;
+    font-size: 15px;
 }
+
 form {
     margin: 10px 0;
 }
+
 input {
     width: 100%;
     padding: 12px;
@@ -36,10 +51,9 @@ input {
     margin-bottom: 10px;
     font-size: 16px;
     outline: none;
-    box-sizing: border-box;
 }
+
 button {
-    box-sizing: border-box;
     width: 100%;
     padding: 12px;
     background-color: aquamarine;
@@ -49,7 +63,23 @@ button {
     cursor: pointer;
     transition: 0.3s ease-in-out;
 }
+
 button:hover {
     background-color: rgb(127, 255, 212, 0.5);
     color: white;
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 24px 18px;
+    }
+
+    .container h1 {
+        font-size: 20px;
+    }
+
+    input, button {
+        padding: 10px;
+        font-size: 15px;
+    }
 }

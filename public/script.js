@@ -244,7 +244,16 @@ function addVideoStream(video, stream, name, isSelf, userId) {
   const existingBox = document.getElementById(`box-${userId}`);
   if (existingBox) {
     const existingVideo = existingBox.querySelector("video");
-    if (existingVideo) existingVideo.srcObject = stream;
+    if (existingVideo) {
+      existingVideo.srcObject = stream;
+      if (isSelf) {
+        existingVideo.muted = true;
+      } else {
+        existingVideo.muted = false;
+        existingVideo.volume = 1.0;
+      }
+      existingVideo.play().catch((e) => console.log("Video play error:", e));
+    }
     return;
   }
 
@@ -253,9 +262,30 @@ function addVideoStream(video, stream, name, isSelf, userId) {
   box.id = `box-${userId}`;
 
   video.srcObject = stream;
-  video.addEventListener("loadedmetadata", () => {
-    video.play();
-  });
+  video.autoplay = true;
+  video.playsInline = true;
+
+  if (isSelf) {
+    video.muted = true;
+  } else {
+    video.muted = false;
+    video.volume = 1.0;
+  }
+
+  const playMedia = () => {
+    video.play().catch((err) => {
+      console.warn("Autoplay was prevented, attempting to unlock on user interaction:", err);
+      const unlockAudio = () => {
+        video.play().catch((e) => console.log("Unlock play error:", e));
+      };
+      window.addEventListener("click", unlockAudio, { once: true });
+      window.addEventListener("touchstart", unlockAudio, { once: true });
+      window.addEventListener("keydown", unlockAudio, { once: true });
+    });
+  };
+
+  video.addEventListener("loadedmetadata", playMedia);
+  playMedia();
 
   // Check if camera is on
   let isVideoOn = true;
